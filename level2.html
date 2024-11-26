@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Cookie Clicker</title>
+		<style>
+			/* Nastavení základního stylu stránky */
+			body {
+				font-family: Arial, sans-serif; /* Použití čitelného fontu */
+				text-align: center; /* Vycentrování textu */
+				background-color: #f4f4f4; /* Nastavení světlého pozadí */
+				color: #333; /* Nastavení tmavšího textu */
+			}
+
+			.container {
+				margin-top: 50px; /* Přidání prostoru nahoře */
+			}
+
+			#cookie-button {
+				background: none; /* Žádné pozadí tlačítka */
+				border: none; /* Odstranění okrajů tlačítka */
+				cursor: pointer; /* Změna kurzoru na ukazatel */
+			}
+
+			#cookie-button img {
+				width: 150px; /* Velikost obrázku sušenky */
+				height: 150px; /* Výška obrázku */
+				transition: transform 0.1s; /* Animace při kliknutí */
+			}
+
+			#cookie-button img:active {
+				transform: scale(0.9); /* Zmenšení při stisknutí tlačítka */
+			}
+
+			.upgrades {
+				margin-top: 20px; /* Odstup od tlačítka sušenky */
+			}
+
+			.stats {
+				margin-top: 20px; /* Odstup od tlačítka sušenky */
+			}
+
+			button {
+				font-size: 16px; /* Velikost textu na tlačítku */
+				padding: 10px 20px; /* Velikost vnitřního okraje */
+				border: none; /* Odstranění okrajů */
+				background-color: #ff9800; /* Oranžové pozadí */
+				color: white; /* Bílý text */
+				border-radius: 5px; /* Zaoblené rohy tlačítka */
+				cursor: pointer; /* Ukazatel na tlačítku */
+				transition: background-color 0.2s; /* Animace při přejetí myší */
+			}
+
+			button:disabled {
+				background-color: #ccc; /* Neaktivní tlačítka šedá */
+				cursor: not-allowed; /* Změna kurzoru na zakázaný */
+			}
+
+			button:hover:not(:disabled) {
+				background-color: #e68a00; /* Změna barvy při přejetí myší */
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>Cookie Clicker</h1>
+			<!-- Displej aktuálního skóre -->
+			<p>Počet klikov: <span id="score">0</span></p>
+
+			<!-- Tlačítko pro kliknutí na sušenku -->
+			<button id="cookie-button">
+				<img src="https://cdn-icons-png.flaticon.com/512/2024/2024856.png" alt="Cookie" />
+			</button>
+
+			<div class="upgrades">
+				<!-- Tlačítko pro zakoupení upgradu -->
+				<button id="upgrade" disabled>Kupit Upgrade (+1/klik) - Cena: <span id="upgrade-cost">10</span></button>
+				<!-- Tlačítko pro zakoupení automatického klikera -->
+				<button id="auto-clicker" disabled>Kupit Auto-Clicker (1/s) - Cena: <span id="auto-cost">50</span></button>
+			</div>
+
+			<div class="stats">
+				<!-- Tlačítko pro zobrazení statistik -->
+				<button id="show-stats">Zobrazit Statistiky</button>
+				<!-- Tlačítko pro resetování hry -->
+				<button id="reset-game">Resetovat Hru</button>
+			</div>
+		</div>
+		<script>
+			// Definice Premenných:
+			// Proměnné jsou místa, kam ukládáme data, která můžeme během programu měnit (let) nebo ponechat konstantní (const).
+			// Jsou jako šuplíky v kanceláři, kde si ukládáte věci (data), abyste je mohli později použít.
+
+			// Příklad z reálného života:
+			// Proměnná score: Ukládá aktuální počet kliknutí hráče.
+			// Reálný příklad: Jako když si zapíšete na papír, kolik zákazníků dnes přišlo do vaší kavárny. Každý nový zákazník přičtete jedničku a aktualizujete hodnotu.
+
+			// Herní proměnné - ukládají stav hry
+			let score = parseInt(localStorage.getItem('score')) || 0 // Aktuální skóre (uložené nebo výchozí 0)
+			let clickValue = 1 + (parseInt(localStorage.getItem('bonusClickValue')) || 0) // Hodnota 1 kliknutí (+bonus)
+			let upgradeCost = 10 // Cena upgradu
+			let autoClickerCost = 50 // Cena auto-clickeru
+			let autoClickers = parseInt(localStorage.getItem('autoClickers')) || 0 // Počet zakoupených auto-clickerů
+			let totalClicks = parseInt(localStorage.getItem('totalClicks')) || 0 // Celkový počet kliknutí
+			let upgradesPurchased = parseInt(localStorage.getItem('upgradesPurchased')) || 0 // Počet zakoupených upgradů
+
+			// Reference na HTML prvky
+			const scoreDisplay = document.getElementById('score') // Zobrazení skóre
+			const cookieButton = document.getElementById('cookie-button') // Tlačítko sušenky
+			const upgradeButton = document.getElementById('upgrade') // Tlačítko upgradu
+			const upgradeCostDisplay = document.getElementById('upgrade-cost') // Cena upgradu
+			const autoClickerButton = document.getElementById('auto-clicker') // Tlačítko auto-clickeru
+			const autoCostDisplay = document.getElementById('auto-cost') // Cena auto-clickeru
+			const showStatsButton = document.getElementById('show-stats') // Tlačítko statistik
+			const resetGameButton = document.getElementById('reset-game') // Tlačítko resetu hry
+
+			// Zobrazení aktuálního skóre na stránce
+			scoreDisplay.textContent = score
+
+			// Událost pro kliknutí na sušenku
+			cookieButton.addEventListener('click', () => {
+				score += clickValue // Zvýšení skóre o hodnotu kliknutí
+				totalClicks++ // Zvýšení počtu kliknutí
+				updateScore() // Aktualizace skóre
+				checkUpgradesAvailability() // Aktualizace tlačítek
+			})
+
+			// Koupit upgrade pro zvýšení hodnoty kliknutí
+			upgradeButton.addEventListener('click', () => {
+				if (score >= upgradeCost) {
+					// Kontrola dostatečného skóre
+					score -= upgradeCost // Odečtení ceny upgradu
+					clickValue += 1 // Zvýšení hodnoty kliknutí
+					upgradesPurchased++ // Zvýšení počtu zakoupených upgradů
+					upgradeCost = Math.floor(upgradeCost * 1.5) // Zvýšení ceny upgradu
+					updateScore() // Aktualizace skóre
+					upgradeCostDisplay.textContent = upgradeCost // Aktualizace zobrazení ceny
+					checkUpgradesAvailability() // Aktualizace stavu tlačítek
+				}
+			})
+
+			// Události (addEventListener)
+			// Definice:
+			// Události jsou akce, které se stanou na stránce (např. kliknutí, pohyb myší).
+			// Pomocí posluchačů událostí (addEventListener) můžete na tyto akce reagovat.
+			// Je to jako tlačítko na výtahu – stisknutí vyvolá konkrétní reakci (např. přivolání výtahu).
+
+			// Příklad z reálného života:
+			// Událost kliknutí na tlačítko sušenky: Při každém kliknutí se zvýší skóre.
+			// Reálný příklad: Jako když zákazník vstoupí do vaší kavárny a stiskne zvonek na přepážce,
+			// čímž vás upozorní, že máte zaznamenat další návštěvu.
+
+			// Koupit auto-clicker
+			autoClickerButton.addEventListener('click', () => {
+				if (score >= autoClickerCost) {
+					// Kontrola dostatečného skóre
+					score -= autoClickerCost // Odečtení ceny auto-clickeru
+					autoClickers++ // Zvýšení počtu auto-clickerů
+					autoClickerCost = Math.floor(autoClickerCost * 2) // Zvýšení ceny auto-clickeru
+					updateScore() // Aktualizace skóre
+					autoCostDisplay.textContent = autoClickerCost // Aktualizace zobrazení ceny
+					checkUpgradesAvailability() // Aktualizace stavu tlačítek
+				}
+			})
+
+			// Automatické přidávání bodů každou sekundu
+			setInterval(() => {
+				if (autoClickers > 0) {
+					// Kontrola, zda je aktivní auto-clicker
+					score += autoClickers // Přidání bodů za auto-clicker
+					updateScore() // Aktualizace skóre
+					checkUpgradesAvailability() // Aktualizace tlačítek
+				}
+			}, 1000)
+
+			// Funkce (function)
+			// Definice:
+			// Funkce jsou bloky kódu, které plní konkrétní úkol. Zavoláte je, kdykoliv chcete tento úkol provést.
+			// Jsou jako pracovníci v kanceláři, kteří mají přidělenou určitou práci.
+
+			// Příklad z reálného života:
+			// Funkce updateScore: Aktualizuje zobrazení skóre a ukládá jej do prohlížeče.
+			// Reálný příklad: Máte zaměstnance, který každou hodinu zapíše aktuální tržby do účetního systému, aby byly vždy aktuální.
+
+			// Aktualizace skóre na stránce a v localStorage
+			function updateScore() {
+				scoreDisplay.textContent = score // Zobrazení aktuálního skóre
+				localStorage.setItem('score', score) // Uložení skóre
+				localStorage.setItem('totalClicks', totalClicks) // Uložení kliknutí
+				localStorage.setItem('upgradesPurchased', upgradesPurchased) // Uložení upgradů
+				localStorage.setItem('autoClickers', autoClickers) // Uložení auto-clickerů
+			}
+
+			// Kontrola dostupnosti upgradů a tlačítek
+			function checkUpgradesAvailability() {
+				upgradeButton.disabled = score < upgradeCost // Deaktivace tlačítka upgradu
+				autoClickerButton.disabled = score < autoClickerCost // Deaktivace tlačítka auto-clickeru
+			}
+
+			// Zobrazení statistik
+			showStatsButton.addEventListener('click', () => {
+				alert(`Statistiky:\nCelkové kliky: ${totalClicks}\nAuto-clickery: ${autoClickers}\nKoupené upgrady: ${upgradesPurchased}`) // Výpis statistik
+			})
+
+			// Resetování hry
+			resetGameButton.addEventListener('click', () => {
+				const bonusClickValue = Math.floor(score / 100) // Výpočet bonusu za skóre
+				localStorage.setItem('bonusClickValue', bonusClickValue) // Uložení bonusu
+				alert(`Hra resetována! Získal jsi trvalý bonus: +${bonusClickValue}/klik.`)
+
+				// Reset herních hodnot
+				score = 0
+				clickValue = 1 + bonusClickValue // Nastavení bonusového kliknutí
+				upgradeCost = 10
+				autoClickerCost = 50
+				autoClickers = 0
+				totalClicks = 0
+				upgradesPurchased = 0
+
+				// Aktualizace uživatelského rozhraní
+				upgradeCostDisplay.textContent = upgradeCost
+				autoCostDisplay.textContent = autoClickerCost
+				updateScore()
+				checkUpgradesAvailability()
+			})
+
+			// Prvotní kontrola tlačítek po načtení stránky
+			checkUpgradesAvailability()
+		</script>
+	</body>
+</html>
