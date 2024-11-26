@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Cookie Clicker</title>
+		<link rel="stylesheet" href="style.css" />
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				text-align: center;
+				background-color: #f4f4f4;
+				color: #333;
+			}
+
+			.container {
+				margin-top: 50px;
+			}
+
+			#cookie-button {
+				background: none;
+				border: none;
+				cursor: pointer;
+			}
+
+			#cookie-button img {
+				width: 150px;
+				height: 150px;
+				transition: transform 0.1s;
+			}
+
+			#cookie-button img:active {
+				transform: scale(0.9);
+			}
+
+			.upgrades {
+				margin-top: 20px;
+			}
+
+			button {
+				font-size: 16px;
+				padding: 10px 20px;
+				border: none;
+				background-color: #ff9800;
+				color: white;
+				border-radius: 5px;
+				cursor: pointer;
+				transition: background-color 0.2s;
+			}
+
+			button:disabled {
+				background-color: #ccc;
+				cursor: not-allowed;
+			}
+
+			button:hover:not(:disabled) {
+				background-color: #e68a00;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>Cookie Clicker</h1>
+			<p>Počet klikov: <span id="score">0</span></p>
+			<button id="cookie-button">
+				<img src="https://cdn-icons-png.flaticon.com/512/2024/2024856.png" alt="Cookie" />
+			</button>
+			<div class="upgrades">
+				<!-- Tlačítko pro zlepšení hodnoty kliknutí -->
+				<button id="upgrade" disabled>Kupit Upgrade (+1/klik) - Cena: <span id="upgrade-cost">10</span></button>
+				<!-- Tlačítko pro automatické klikání -->
+				<button id="auto-clicker" disabled>Kupit Auto-Clicker (1/s) - Cena: <span id="auto-cost">50</span></button>
+			</div>
+		</div>
+		<script>
+			// Inicializace základních proměnných
+			let score = parseInt(localStorage.getItem('score')) || 0 // Načtení skóre z localStorage
+			let clickValue = 1
+			let upgradeCost = 10
+			let autoClickerCost = 50
+			let autoClickers = 0 // Počet auto-clickerů
+
+			// Reference na prvky DOM
+			const scoreDisplay = document.getElementById('score')
+			const cookieButton = document.getElementById('cookie-button')
+			const upgradeButton = document.getElementById('upgrade')
+			const upgradeCostDisplay = document.getElementById('upgrade-cost')
+			const autoClickerButton = document.getElementById('auto-clicker')
+			const autoCostDisplay = document.getElementById('auto-cost')
+
+			// Aktualizace skóre na stránce
+			scoreDisplay.textContent = score
+
+			// Funkce pro kliknutí na sušenku
+			cookieButton.addEventListener('click', () => {
+				score += clickValue
+				updateScore()
+				checkUpgradesAvailability()
+			})
+
+			// Koupit upgrade pro zvýšení hodnoty kliknutí
+			upgradeButton.addEventListener('click', () => {
+				if (score >= upgradeCost) {
+					score -= upgradeCost
+					clickValue += 1
+					upgradeCost = Math.floor(upgradeCost * 1.5) // Zvyšení ceny upgradu
+					updateScore()
+					upgradeCostDisplay.textContent = upgradeCost
+					checkUpgradesAvailability()
+				}
+			})
+
+			// Koupit automatický clicker
+			autoClickerButton.addEventListener('click', () => {
+				if (score >= autoClickerCost) {
+					score -= autoClickerCost
+					autoClickers += 1 // Přidá jeden auto-clicker
+					autoClickerCost = Math.floor(autoClickerCost * 2) // Zvýšení ceny auto-clickeru
+					updateScore()
+					autoCostDisplay.textContent = autoClickerCost
+					checkUpgradesAvailability()
+				}
+			})
+
+			// Automatické klikání každou sekundu
+			setInterval(() => {
+				if (autoClickers > 0) {
+					score += autoClickers // Přidá skóre podle počtu auto-clickerů
+					updateScore()
+					checkUpgradesAvailability()
+				}
+			}, 1000)
+
+			// Funkce pro aktualizaci skóre na stránce a v localStorage
+			function updateScore() {
+				scoreDisplay.textContent = score
+				localStorage.setItem('score', score) // Ukládání skóre do localStorage
+			}
+
+			// Kontrola dostupnosti upgradů
+			function checkUpgradesAvailability() {
+				upgradeButton.disabled = score < upgradeCost // Aktivace/deaktivace upgradu
+				autoClickerButton.disabled = score < autoClickerCost // Aktivace/deaktivace auto-clickeru
+			}
+
+			// Kontrola dostupnosti upgradů na začátku
+			checkUpgradesAvailability()
+		</script>
+	</body>
+</html>
